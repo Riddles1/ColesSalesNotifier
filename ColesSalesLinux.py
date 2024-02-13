@@ -10,7 +10,7 @@ import pandas as pd
 
 CSV_FILE_PATH = r"/home/ridley/Desktop/GITHUB REPOS/ColesSalesNotifier/Items.csv"
 DOTENV_FILE_PATH = r"/home/ridley/Desktop/GITHUB REPOS/ColesSalesNotifier/email_credentials.env"
-SLEEP_TIME = 10
+SLEEP_TIME = 60*60*6
 
 #This program is designed to run constantly (in my case, on a Raspberry Pi)
 #Note, this program relies heavily on the format of the Coles website and that Coles continues to sell the products in the ITEMS list
