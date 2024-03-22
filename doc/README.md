@@ -1,1 +1,2 @@
 Your email must be setup to allow automatic emailing
+Any items can be added to Items.csv. All you have to do is go on the coles website and find the item URL, the other two columns are just whatever you want to name it (short and long name)
