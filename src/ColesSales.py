@@ -36,6 +36,32 @@ def email(subject, body):
     with smtplib.SMTP_SSL('smtp.gmail.com', 465, context = context) as smtp:
         smtp.login(email_sender, email_password)
         smtp.sendmail(email_sender, email_receiver, em.as_string())
+    
+def fetch_page(item_position):
+    max_retries = 5  # Maximum number of retries
+    retries = 0
+    
+    while retries < max_retries:
+        try:
+            page = requests.get(df['URL'][item_position]) 
+        except Exception as e:
+            print(f"Failed to request the page for '{df['Item Full Name'][item_position]}'")
+            time.sleep(120) #wait 2mins before trying again
+            continue    
+        soup = BeautifulSoup(page.content, 'html.parser')
+        #find the location in the html that contains the price
+        price_html = soup.find("span", class_="price__value")
+        #extract the price value out of that information
+        #the below few lines are a complicated way of making sure that the price_value is correct for any number of digits in the price value
+        first_index = str(price_html).find('$') + 1
+        second_index = (str(price_html)[first_index:]).find('"') + first_index
+        #Check if the page has actually returned correctly
+        if str(price_html)[first_index: second_index] == "Non":
+            retries += 1
+            continue
+        price_value = float(str(price_html)[first_index: second_index])
+        break
+    return price_value
 
 PREVIOUS_EMAILS_TIMESTAMPS = []
 
@@ -44,21 +70,8 @@ while True:
     items_on_sale = []
     #iterate through the items i'm interested in and request their page on Coles' website
     for item_position in range(len(df['URL'])):
-        try:
-            page = requests.get(df['URL'][item_position]) 
-        except:
-            print(f"Failed to request the page for '{df['Item Full Name'][item_position]}'")
-            time.sleep(10) #wait 10 seconds before trying again
-            continue
-        #parse that request into BeautifulSoup so that it's html can be analysed
-        soup = BeautifulSoup(page.content, 'html.parser')
-        #find the location in the html that contains the price
-        price_html = soup.find("span", class_="price__value")
-        #extract the price value out of that information
-        #the below few lines are a complicated way of making sure that the price_value is correct for any number of digits in the price value
-        first_index = str(price_html).find('$') + 1
-        second_index = (str(price_html)[first_index:]).find('"') + first_index
-        price_value = float(str(price_html)[first_index: second_index])
+        #fetch the page and return the price value
+        price_value = fetch_page(item_position)
         #check if the price is in the target range
         if price_value <= df['Target Price'][item_position]:
             #if so, add the item to a list along with it's current price so I can be emailed about it
