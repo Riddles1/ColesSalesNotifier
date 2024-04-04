@@ -10,7 +10,7 @@ import pandas as pd
 
 CSV_FILE_PATH = r".config/Items.csv"
 DOTENV_FILE_PATH = r".config\email_credentials.env"
-SLEEP_TIME = 60*60*6
+SLEEP_TIME = 1 #60*60*6
 
 #This program is designed to run constantly (in my case, on a Raspberry Pi)
 #Note, this program relies heavily on the format of the Coles website and that Coles continues to sell the products in the ITEMS list
@@ -40,8 +40,12 @@ def email(subject, body):
 def fetch_page(item_position):
     max_retries = 5  # Maximum number of retries
     retries = 0
-    
+    price_value = 0
     while retries < max_retries:
+        if retries > 0:
+            print(f"retry #{retries}")
+            time.sleep(10)
+        price_value = 0
         try:
             page = requests.get(df['URL'][item_position]) 
         except Exception as e:
@@ -59,7 +63,7 @@ def fetch_page(item_position):
         if str(price_html)[first_index: second_index] == "Non":
             retries += 1
             continue
-        price_value = float(str(price_html)[first_index: second_index])
+        price_value += float(str(price_html)[first_index: second_index])
         break
     return price_value
 
@@ -73,7 +77,7 @@ while True:
         #fetch the page and return the price value
         price_value = fetch_page(item_position)
         #check if the price is in the target range
-        if price_value <= df['Target Price'][item_position]:
+        if price_value <= df['Target Price'][item_position] and price_value != 0:
             #if so, add the item to a list along with it's current price so I can be emailed about it
             items_on_sale.append([item_position, price_value])
             print(f"The current price of {df['Item Nickname'][item_position]} is ${'{:,.2f}'.format(price_value)} | (below the target value of ${'{:,.2f}'.format(df['Target Price'][item_position])})")
@@ -88,7 +92,7 @@ while True:
             #include every item in the email, each on a separate line
             for item in items_on_sale:
                 body += f"{df['Item Full Name'][item[0]]} is now ${'{:,.2f}'.format(item[1])}\n"
-            email(subject, body)
+            # email(subject, body) ############################################################################ UNCOMMENT THIS LINE WHEN IN USE 
             print('\n--- email has been sent ---')
             #add the timestamp that email was sent to a list to look at later to make sure I'm not emailed more than once a day
             PREVIOUS_EMAILS_TIMESTAMPS.append(datetime.now().strftime("%d/%m/%Y"))
